@@ -5,12 +5,10 @@ export const authMiddleware = async (req, res, next) => {
     if (req.path === '/signin' || req.path === '/signup') {
         return next();
     }
-
     const token = req.headers['authorization'];
     if (!token) {
         return res.status(403).send({ error: 'No token provided' });
     }
-
     try {
         const decoded = await verifyToken(token);
         req.userId = decoded.userId;

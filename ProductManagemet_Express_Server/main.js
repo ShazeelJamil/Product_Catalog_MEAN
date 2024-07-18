@@ -1,19 +1,17 @@
-import mongoose from 'mongoose'
+import cors from 'cors';
+import bcrypt from 'bcrypt';
 import express from 'express';
+import jwt from 'jsonwebtoken';
+import mongoose from 'mongoose'
+import { User } from './Models/User.model.js';
 import { Product } from './Models/Product.model.js'
 import { JWT_SECRET } from './Services/authService.js';
 import { authMiddleware } from './Middleware/auth.js';
-import jwt from 'jsonwebtoken';
-import bcrypt from 'bcrypt';
-import { appendProductToUser } from './Services/updateUserProducts.js';
-
-
+import { appendProductToUser, deleteProductFromUser } from './Services/updateUserProducts.js';
 
 
 // const connection = await mongoose.connect("mongodb://localhost:27017/ProductManagement")
 const connection = await mongoose.connect("mongodb+srv://sajeelmasih:mYfKybDLOeBBrPES@cluster0.wb0mjmu.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
-import cors from 'cors';
-import { User } from './Models/User.model.js';
 
 const app = express()
 const port = 3000
@@ -22,6 +20,15 @@ app.use(express.json());
 
 // Apply the auth middleware to all routes except /signin and /signup
 app.use(authMiddleware);
+
+app.get('/', async (req, res) => {
+    try {
+        const products = await Product.find({});
+        res.send(products)
+    } catch (err) {
+        res.status(500).send(err);
+    }
+});
 
 app.post('/signin', async (req, res) => {
     try {
@@ -41,15 +48,6 @@ app.post('/signin', async (req, res) => {
         res.status(200).send({ message: 'Sign in successful', token });
     } catch (err) {
         res.status(500).send({ error: err.message });
-    }
-});
-
-app.get('/', async (req, res) => {
-    try {
-        const products = await Product.find({});
-        res.send(products)
-    } catch (err) {
-        res.status(500).send(err);
     }
 });
 
@@ -74,6 +72,23 @@ app.get('/getById/:id', async (req, res) => {
         }
     } catch (err) {
         res.status(500).send(err);
+    }
+});
+
+app.get('/getAllProductsOfUser/:id', async (req, res) => {
+    try {
+        const userId = req.params.id;
+        // Find the user by userId
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).send({ error: 'User not found' });
+        }
+        // Retrieve all products of the user by their IDs
+        const products = await Product.find({ _id: { $in: user.products } });
+
+        res.status(200).send(products);
+    } catch (err) {
+        res.status(500).send({ error: err.message });
     }
 });
 
@@ -126,6 +141,11 @@ app.delete('/deleteProduct/:id', async (req, res) => {
         const _id = req.params.id;
         const deletedProduct = await Product.findByIdAndDelete(_id);
         if (deletedProduct) {
+            // Delete the product's ID to the user's products array
+            const result = await deleteProductFromUser(req.userId, _id);
+            if (!result.success) {
+                throw new Error(result.error);
+            }
             res.status(200).send({ message: 'Product deleted successfully' });
         } else {
             res.status(200).send({ message: "Product not found" })
