@@ -3,11 +3,12 @@ import { FormsModule, FormControl, FormGroup, ReactiveFormsModule, Validators } 
 import { HttpClientService } from '../../Services/http-client.service';
 import { User } from '../../Models/User.model';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-signup',
   standalone: true,
-  imports: [FormsModule,CommonModule,ReactiveFormsModule],
+  imports: [FormsModule, CommonModule, ReactiveFormsModule],
   templateUrl: './signup.component.html',
   styleUrl: './signup.component.css'
 })
@@ -19,7 +20,7 @@ export class SignupComponent {
     password: new FormControl("", [Validators.required, Validators.minLength(6)])
   });
 
-  constructor(private _productService: HttpClientService) { }
+  constructor(private _userService: HttpClientService, private router: Router) { }
 
   onSubmit() {
     if (this.userForm.valid) {
@@ -28,8 +29,16 @@ export class SignupComponent {
         this.userForm.value.email!,
         this.userForm.value.password!
       );
-      console.log(user);
-      // Call a service to handle the user signup logic
+      this._userService.signUp(user).subscribe(
+        response => {
+          this.router.navigate(['/signin']);
+
+        },
+        error => {
+          console.error("API error:", error);
+        }
+      );
+
     } else {
       console.log('Form is not valid');
     }
