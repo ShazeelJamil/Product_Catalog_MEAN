@@ -2,15 +2,16 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { Product } from '../../Models/Product.model';
 import { FormsModule } from '@angular/forms'; // Import FormsModule
-import { Router } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 
 
 import { HttpClientService } from '../../Services/http-client.service';
+import { NavbarComponent } from '../navbar/navbar.component';
 
 @Component({
   selector: 'app-all-product',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterModule,NavbarComponent],
   templateUrl: './all-product.component.html',
   styleUrl: './all-product.component.css'
 })
